@@ -29,7 +29,6 @@
     overflow-x: hidden;
   }
   
-  /* Super slim panel width to prioritize vertical height */
   .wrap{
     max-width:260px;
     margin:0;
@@ -108,7 +107,6 @@
     display: block;
   }
 
-  /* Vertical task layout */
   .task{
     display:flex; gap:6px; align-items:flex-start;
     padding:7px 0;
@@ -140,7 +138,6 @@
     transform:rotate(40deg);
   }
 
-  /* Split Task Title and Tag */
   .task-body {
     display: flex;
     flex-direction: column;
@@ -186,7 +183,6 @@
     padding-bottom: 4px;
   }
 
-  /* Focus Mode Layout */
   body.focus-mode header,
   body.focus-mode .month-head,
   body.focus-mode .foot,
@@ -212,7 +208,6 @@
   .reset-btn:hover{border-color:var(--emerald-dim); color:var(--emerald);}
   .loading{color:var(--muted-dark); font-size:10px; padding:10px 0;}
 
-  /* ===== Right-side Quick Plans panel ===== */
   #quickPlansBox{
     position:fixed;
     top:14px;
@@ -304,7 +299,6 @@
 </head>
 <body>
 <div class="wrap">
-
   <header id="mainHeader">
     <div class="eyebrow">SEMESTER BUILD LOG</div>
     <h1>Software &amp; Wokwi</h1>
@@ -327,7 +321,6 @@
   </div>
 </div>
 
-<!-- ===== Right-side Quick Plans box (synced with the Kotlin phone app via Supabase) ===== -->
 <div id="quickPlansBox">
   <div class="qp-head">
     <span class="qp-title">Quick Plans</span>
@@ -359,15 +352,6 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-/* =========================================================
-   SUPABASE CONFIG — fill these in from your Supabase project
-   (Project Settings → API → Project URL / anon public key)
-   ========================================================= */
-const SUPABASE_URL = "https://YOUR-PROJECT.supabase.co";
-const SUPABASE_ANON_KEY = "YOUR_ANON_KEY";
-</script>
-
 <script>
 const DATA = [
   { month: "Month 1 — Restart rhythm", tag: "W 1–4", weeks: [
@@ -507,7 +491,6 @@ const DATA = [
   ]}
 ];
 
-// Split task text into main content + sub-label
 function parseTask(taskStr) {
   const colonIdx = taskStr.indexOf(":");
   if (colonIdx !== -1) {
@@ -524,10 +507,7 @@ DATA.forEach((m, mi) => {
 });
 
 const STORAGE_KEY = "build-log-state-v7";
-let state = {
-  tasks: {},
-  activeWeek: "m0-w0"
-};
+let state = { tasks: {}, activeWeek: "m0-w0" };
 
 function taskId(mi, wi, ti){ return `m${mi}-w${wi}-t${ti}`; }
 function weekId(mi, wi){ return `m${mi}-w${wi}`; }
@@ -614,7 +594,7 @@ function render(){
   document.getElementById("barFill").style.width = (total ? (done/total)*100 : 0) + "%";
 
   root.querySelectorAll('.week-head').forEach(wHead => {
-    wHead.addEventListener('click', async (e) => {
+    wHead.addEventListener('click', (e) => {
       const selectedWId = e.currentTarget.dataset.weekid;
       state.activeWeek = selectedWId;
       render();
@@ -623,7 +603,7 @@ function render(){
   });
 
   root.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-    cb.addEventListener("change", async (e) => {
+    cb.addEventListener("change", (e) => {
       const id = e.target.closest(".task").dataset.id;
       state.tasks[id] = e.target.checked;
       render();
@@ -632,8 +612,7 @@ function render(){
   });
 }
 
-// Key handling for navigation
-window.addEventListener("keydown", async (e) => {
+window.addEventListener("keydown", (e) => {
   if (e.target.tagName === 'INPUT' || e.target.isContentEditable) return;
   const key = e.key.toLowerCase();
 
@@ -668,17 +647,17 @@ window.addEventListener("keydown", async (e) => {
   }
 });
 
-async function saveState(){
-  try { await window.storage.set(STORAGE_KEY, JSON.stringify(state), false); }
+function saveState(){
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
   catch(err){ console.error("save failed", err); }
 }
 
-async function init(){
+function init(){
   const loadingEl = document.getElementById("loading");
   try {
-    const result = await window.storage.get(STORAGE_KEY, false);
-    if (result && result.value) {
-      const loaded = JSON.parse(result.value);
+    const result = localStorage.getItem(STORAGE_KEY);
+    if (result) {
+      const loaded = JSON.parse(result);
       state = {
         tasks: loaded.tasks || loaded || {},
         activeWeek: loaded.activeWeek !== undefined ? loaded.activeWeek : "m0-w0"
@@ -691,7 +670,7 @@ async function init(){
   render();
 }
 
-document.getElementById("resetBtn").addEventListener("click", async () => {
+document.getElementById("resetBtn").addEventListener("click", () => {
   if (!confirm("Clear all checked progress?")) return;
   state = { tasks: {}, activeWeek: "m0-w0" };
   render();
@@ -699,11 +678,12 @@ document.getElementById("resetBtn").addEventListener("click", async () => {
 });
 
 init();
-</script>
 
-<!-- ===== Quick Plans logic (Supabase-backed, shared with the phone app) ===== -->
-<script>
+// Quick Plans Logic
 (function(){
+  const SUPABASE_URL = "https://zthakbpvbbruinmfkoud.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp0aGFrYnB2YmJydWlubWZrb3VkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0ODA3NjQsImV4cCI6MjEwNTA1Njc2NH0.JyXTgMd5bWqwesD10VvR5ODCjFZXP2n99AyRx9-iHKE";
+
   const statusEl = document.getElementById("qpStatus");
   const listEl = document.getElementById("qpList");
   const progNumEl = document.getElementById("qpProgressNum");
@@ -713,9 +693,9 @@ init();
   const newCatEl = document.getElementById("qpNewCategory");
   const addBtnEl = document.getElementById("qpAddBtn");
 
-  if (!window.supabase || SUPABASE_URL.includes("YOUR-PROJECT")) {
+  if (!window.supabase || SUPABASE_ANON_KEY.includes("...")) {
     statusEl.textContent = "not configured";
-    listEl.innerHTML = '<div class="qp-empty">Add your Supabase URL &amp; anon key at the top of this file, then run supabase-schema.sql in your project.</div>';
+    listEl.innerHTML = '<div class="qp-empty">Add your full Supabase anon key to complete setup.</div>';
     return;
   }
 
@@ -733,7 +713,6 @@ init();
       return;
     }
 
-    // newest first
     const sorted = [...plans].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
 
     listEl.innerHTML = sorted.map(p => `
@@ -812,7 +791,7 @@ init();
   addBtnEl.addEventListener("click", addPlan);
   newTextEl.addEventListener("keydown", (e) => { if (e.key === "Enter") addPlan(); });
 
-  sb.channel("plans-changes")
+  sb.channel("public:plans")
     .on("postgres_changes", { event: "*", schema: "public", table: "plans" }, () => {
       fetchPlans();
     })
@@ -820,12 +799,13 @@ init();
       if (status === "SUBSCRIBED"){
         statusEl.textContent = "live";
         statusEl.classList.add("live");
+      } else {
+        statusEl.textContent = status.toLowerCase();
       }
     });
 
   fetchPlans();
 })();
 </script>
-
 </body>
 </html>
