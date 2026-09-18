@@ -1,87 +1,831 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>My Planner</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
-        body {
-            background-color: transparent;
-            color: #f5f8fa;
-            display: flex;
-            gap: 20px;
-            padding: 40px;
-            height: 100vh;
-        }
-        .panel {
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(10px);
-            border-radius: 12px;
-            padding: 24px;
-            width: 320px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        h2 { font-size: 1.2rem; font-weight: 600; letter-spacing: 1px; color: #fff; }
-        hr { border: none; height: 1px; background: rgba(255, 255, 255, 0.2); }
-        .label { font-size: 0.85rem; color: #88a; font-weight: 600; }
-        .list { display: flex; flex-direction: column; gap: 8px; flex-grow: 1; overflow-y: auto; }
-        .item { display: flex; align-items: center; gap: 10px; background: rgba(255, 255, 255, 0.05); padding: 8px 12px; border-radius: 6px; }
-        .item input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
-        .item input[type="text"] {
-            background: transparent; border: none; color: #fff; width: 100%; outline: none; font-size: 0.95rem;
-        }
-        .item input[type="text"]:focus { border-bottom: 1px solid #88a; }
-        .btn {
-            background: transparent; border: none; color: #88a; cursor: pointer; text-align: left; font-size: 0.9rem; font-weight: 600;
-        }
-        .btn:hover { color: #fff; }
-    </style>
+<meta charset="UTF-8">
+<title>Build Log — Emerald Vertical Edition</title>
+<style>
+  :root{
+    --bg: #000000;
+    --panel: #09130e;
+    --panel-raised: #0f1f17;
+    --line: #1b3326;
+    --text: #d1fae5;
+    --muted: #6ee7b7;
+    --muted-dark: #047857;
+    --emerald: #10b981;
+    --emerald-dim: #059669;
+    --ok: #34d399;
+    --ok-dim: #064e3b;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    padding:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+    line-height:1.35;
+    user-select: none;
+    overflow-x: hidden;
+  }
+  
+  /* Super slim panel width to prioritize vertical height */
+  .wrap{
+    max-width:260px;
+    margin:0;
+    padding:14px 10px 24px 12px;
+  }
+
+  header{margin-bottom:10px;}
+  .eyebrow{
+    font-family: ui-monospace, monospace;
+    font-size:9.5px;
+    color:var(--emerald);
+    letter-spacing:0.02em;
+  }
+  h1{
+    font-size:15px;
+    margin:2px 0 3px;
+    font-weight:650;
+  }
+  .sub{color:var(--muted-dark); font-size:10px;}
+
+  .progress-shell{
+    margin-top:8px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:6px 8px;
+  }
+  .progress-row{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;}
+  .progress-num{font-family: ui-monospace, monospace; font-size:13px; color:var(--emerald);}
+  .progress-label{font-size:9.5px; color:var(--muted-dark);}
+  .bar-track{height:4px; background:#000000; border-radius:99px; overflow:hidden;}
+  .bar-fill{height:100%; background:var(--emerald); width:0%;}
+
+  .month{margin-top:12px;}
+  .month-head{
+    display:flex; align-items:center; gap:4px;
+    cursor:pointer;
+    padding:3px 0;
+    border-bottom:1px solid var(--line);
+    margin-bottom:6px;
+  }
+  .month-head .chev{
+    font-family: ui-monospace, monospace;
+    color:var(--emerald);
+    font-size:10px;
+    width:8px;
+  }
+  .month-head.collapsed .chev{transform:rotate(-90deg);}
+  .month-title{font-weight:600; font-size:11.5px;}
+  .month-tag{margin-left:auto; font-family:ui-monospace,monospace; font-size:9px; color:var(--muted-dark);}
+  .month-body{display:grid; gap:6px;}
+  .month-body.collapsed{display:none;}
+
+  .week{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:8px;
+  }
+  .week.milestone{border-color:var(--emerald-dim);}
+  .week-head{
+    display:flex; 
+    align-items:baseline; 
+    gap:4px; 
+    cursor:pointer;
+  }
+  .week-num{font-family:ui-monospace,monospace; font-size:10px; color:var(--emerald);}
+  .week-title{font-size:11.5px; font-weight:600;}
+  .week-done-tag{margin-left:auto; font-size:9px; color:var(--muted-dark); font-family:ui-monospace,monospace;}
+
+  .week-content {
+    display: none;
+    margin-top: 8px;
+  }
+  .week.active .week-content {
+    display: block;
+  }
+
+  /* Vertical task layout */
+  .task{
+    display:flex; gap:6px; align-items:flex-start;
+    padding:7px 0;
+    border-top:1px solid var(--line);
+  }
+  .task:first-of-type{border-top:none;}
+  .task input[type="checkbox"]{
+    appearance:none;
+    width:13px; height:13px;
+    margin-top:2px;
+    flex:none;
+    border:1.5px solid var(--emerald-dim);
+    border-radius:3px;
+    background:transparent;
+    cursor:pointer;
+    position:relative;
+  }
+  .task input[type="checkbox"]:checked{
+    background:var(--ok-dim);
+    border-color:var(--ok);
+  }
+  .task input[type="checkbox"]:checked::after{
+    content:"";
+    position:absolute;
+    left:3px; top:0px;
+    width:3px; height:6px;
+    border:solid var(--ok);
+    border-width:0 1.5px 1.5px 0;
+    transform:rotate(40deg);
+  }
+
+  /* Split Task Title and Tag */
+  .task-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .task-text {
+    font-size: 11px;
+    cursor: pointer;
+    word-break: break-word;
+  }
+  .task-tag {
+    font-size: 9px;
+    color: var(--emerald);
+    font-family: ui-monospace, monospace;
+    opacity: 0.8;
+  }
+  .task.checked .task-text {
+    color: var(--muted-dark);
+    text-decoration: line-through;
+  }
+  .task.checked .task-tag {
+    color: var(--muted-dark);
+  }
+
+  .milestone-note{
+    margin-top:8px;
+    padding:6px;
+    background:#041a10;
+    border:1px solid var(--emerald-dim);
+    border-radius:4px;
+    font-size:10px;
+    color:#a7f3d0;
+  }
+  .milestone-note b{color:var(--emerald);}
+
+  .key-hint{
+    font-family: ui-monospace, monospace;
+    font-size: 9px;
+    color: var(--emerald);
+    margin-bottom: 6px;
+    display: block;
+    border-bottom: 1px dashed var(--line);
+    padding-bottom: 4px;
+  }
+
+  /* Focus Mode Layout */
+  body.focus-mode header,
+  body.focus-mode .month-head,
+  body.focus-mode .foot,
+  body.focus-mode .month:not(.has-active),
+  body.focus-mode .week:not(.active) {
+    display: none !important;
+  }
+  body.focus-mode .week.active {
+    background: var(--panel-raised);
+    border-color: var(--emerald);
+  }
+
+  .foot{
+    margin-top:14px;
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:9px; color:var(--muted-dark);
+  }
+  .reset-btn{
+    background:none; border:1px solid var(--line); color:var(--muted-dark);
+    padding:2px 5px; border-radius:3px; font-size:9px; cursor:pointer;
+    font-family:inherit;
+  }
+  .reset-btn:hover{border-color:var(--emerald-dim); color:var(--emerald);}
+  .loading{color:var(--muted-dark); font-size:10px; padding:10px 0;}
+
+  /* ===== Right-side Quick Plans panel ===== */
+  #quickPlansBox{
+    position:fixed;
+    top:14px;
+    right:14px;
+    width:230px;
+    max-height:calc(100vh - 28px);
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:10px;
+    display:flex;
+    flex-direction:column;
+    user-select:text;
+  }
+  .qp-head{
+    display:flex; align-items:baseline; justify-content:space-between;
+    margin-bottom:6px;
+  }
+  .qp-title{font-size:12px; font-weight:650;}
+  .qp-status{
+    font-family:ui-monospace,monospace; font-size:9px; color:var(--muted-dark);
+  }
+  .qp-status.live{color:var(--emerald);}
+  .qp-progress{margin-bottom:8px;}
+  .qp-progress .bar-track{height:3px;}
+  .qp-add{
+    display:flex; flex-direction:column; gap:5px;
+    margin-bottom:8px;
+    padding-bottom:8px;
+    border-bottom:1px solid var(--line);
+  }
+  .qp-add input, .qp-add select{
+    background:#000; border:1px solid var(--line); color:var(--text);
+    border-radius:4px; padding:5px 6px; font-size:10.5px; font-family:inherit;
+    outline:none;
+  }
+  .qp-add input:focus, .qp-add select:focus{border-color:var(--emerald-dim);}
+  .qp-add button{
+    background:var(--ok-dim); border:1px solid var(--emerald-dim); color:var(--ok);
+    border-radius:4px; padding:5px 6px; font-size:10px; cursor:pointer; font-family:inherit;
+  }
+  .qp-add button:hover{border-color:var(--emerald);}
+  .qp-list{
+    overflow-y:auto;
+    display:flex; flex-direction:column; gap:2px;
+    scrollbar-width: thin;
+  }
+  .qp-list::-webkit-scrollbar{width:5px;}
+  .qp-list::-webkit-scrollbar-thumb{background:var(--line); border-radius:99px;}
+  .qp-item{
+    display:flex; gap:6px; align-items:flex-start;
+    padding:6px 0;
+    border-top:1px solid var(--line);
+  }
+  .qp-item:first-child{border-top:none;}
+  .qp-item input[type="checkbox"]{
+    appearance:none;
+    width:12px; height:12px;
+    margin-top:2px;
+    flex:none;
+    border:1.5px solid var(--emerald-dim);
+    border-radius:3px;
+    background:transparent;
+    cursor:pointer;
+    position:relative;
+  }
+  .qp-item input[type="checkbox"]:checked{background:var(--ok-dim); border-color:var(--ok);}
+  .qp-item input[type="checkbox"]:checked::after{
+    content:""; position:absolute; left:2.5px; top:-0.5px;
+    width:3px; height:6px; border:solid var(--ok); border-width:0 1.5px 1.5px 0;
+    transform:rotate(40deg);
+  }
+  .qp-item-body{flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;}
+  .qp-item-text{
+    font-size:10.5px; word-break:break-word; cursor:text;
+    outline:none;
+  }
+  .qp-item.done .qp-item-text{color:var(--muted-dark); text-decoration:line-through;}
+  .qp-item-meta{display:flex; gap:6px; align-items:center;}
+  .qp-item-cat{font-size:8.5px; color:var(--emerald); font-family:ui-monospace,monospace; opacity:0.85;}
+  .qp-item-src{font-size:8px; color:var(--muted-dark); font-family:ui-monospace,monospace;}
+  .qp-del{
+    background:none; border:none; color:var(--muted-dark); cursor:pointer;
+    font-size:11px; line-height:1; padding:1px 2px; flex:none;
+  }
+  .qp-del:hover{color:#f87171;}
+  .qp-empty{font-size:10px; color:var(--muted-dark); padding:10px 0; text-align:center;}
+</style>
 </head>
 <body>
+<div class="wrap">
 
-    <!-- PLANS & GOALS PANEL -->
-    <div class="panel">
-        <h2>PLANS</h2>
-        <hr>
-        <div class="label">TODAY</div>
-        <div class="list" id="plans-list">
-            <div class="item"><input type="checkbox"><input type="text" placeholder="New plan..."></div>
-        </div>
-        <button class="btn" onclick="addItem('plans-list')">+ ADD PLAN</button>
-
-        <div class="label" style="margin-top: 10px;">GOALS</div>
-        <div class="list" id="goals-list">
-            <div class="item"><input type="checkbox"><input type="text" placeholder="New goal..."></div>
-        </div>
-        <button class="btn" onclick="addItem('goals-list')">+ ADD GOAL</button>
+  <header id="mainHeader">
+    <div class="eyebrow">SEMESTER BUILD LOG</div>
+    <h1>Software &amp; Wokwi</h1>
+    <div class="sub"><b>B</b> Overview · <b>← / →</b> Nav · <b>F</b> Full</div>
+    <div class="progress-shell">
+      <div class="progress-row">
+        <span class="progress-num" id="progressNum">0%</span>
+        <span class="progress-label" id="progressLabel">0 of 0 tasks</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" id="barFill"></div></div>
     </div>
+  </header>
 
-    <!-- SCHEDULE PANEL -->
-    <div class="panel">
-        <h2>SCHEDULE</h2>
-        <hr>
-        <div class="label">TODAY</div>
-        <div class="list" id="schedule-list">
-            <div class="item"><input type="text" placeholder="Event / Time..."></div>
-        </div>
-        <button class="btn" onclick="addItem('schedule-list')">+ ADD EVENT</button>
+  <div id="loading" class="loading">Loading state…</div>
+  <div id="months"></div>
+
+  <div class="foot">
+    <span>[B] Overview · [←/→] Nav</span>
+    <button class="reset-btn" id="resetBtn">Reset</button>
+  </div>
+</div>
+
+<!-- ===== Right-side Quick Plans box (synced with the Kotlin phone app via Supabase) ===== -->
+<div id="quickPlansBox">
+  <div class="qp-head">
+    <span class="qp-title">Quick Plans</span>
+    <span class="qp-status" id="qpStatus">connecting…</span>
+  </div>
+  <div class="qp-progress">
+    <div class="progress-row">
+      <span class="progress-num" id="qpProgressNum" style="font-size:11px;">0%</span>
+      <span class="progress-label" id="qpProgressLabel">0 of 0</span>
     </div>
+    <div class="bar-track"><div class="bar-fill" id="qpBarFill"></div></div>
+  </div>
+  <div class="qp-add">
+    <input id="qpNewText" type="text" placeholder="Add a plan… (Enter to add)" />
+    <select id="qpNewCategory">
+      <option value="">No category</option>
+      <option value="Python">Python</option>
+      <option value="Wokwi">Wokwi</option>
+      <option value="Finance">Finance</option>
+      <option value="Networking">Networking</option>
+      <option value="Weekend build">Weekend build</option>
+      <option value="General">General</option>
+    </select>
+    <button id="qpAddBtn">+ Add plan</button>
+  </div>
+  <div class="qp-list" id="qpList">
+    <div class="qp-empty">No quick plans yet.</div>
+  </div>
+</div>
 
-    <script>
-        function addItem(listId) {
-            const list = document.getElementById(listId);
-            const div = document.createElement('div');
-            div.className = 'item';
-            if (listId !== 'schedule-list') {
-                div.innerHTML = '<input type="checkbox"><input type="text" placeholder="New item...">';
-            } else {
-                div.innerHTML = '<input type="text" placeholder="Event / Time...">';
-            }
-            list.appendChild(div);
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* =========================================================
+   SUPABASE CONFIG — fill these in from your Supabase project
+   (Project Settings → API → Project URL / anon public key)
+   ========================================================= */
+const SUPABASE_URL = "https://YOUR-PROJECT.supabase.co";
+const SUPABASE_ANON_KEY = "YOUR_ANON_KEY";
+</script>
+
+<script>
+const DATA = [
+  { month: "Month 1 — Restart rhythm", tag: "W 1–4", weeks: [
+    { title: "Dust things off", tasks: [
+      "Python: finish days 32–36 of 100 days of code",
+      "Weekend build: refactor one old Python day-project into something useful",
+      "Wokwi: create account, build classic blink + one sensor-read sim",
+      "Finance: Personal Finance — Assets vs. Liabilities",
+      "Networking: pick 1–2 clubs to sit in on this week",
+      "Reflection: 2-min note on what slowed you down"
+    ]},
+    { title: "Peek at backend", tasks: [
+      "Python: finish days 37–41 of 100 days of code",
+      "Weekend build: skim Node.js/Express basics",
+      "Wokwi: log sensor reading to virtual serial monitor",
+      "Finance: Cash Flow & Net Worth",
+      "Networking: attend club meeting or campus event",
+      "Reflection: 2-min note"
+    ]},
+    { title: "First API", tasks: [
+      "Python: finish days 42–46 of 100 days of code",
+      "Weekend build: create bare Express app with 2 routes",
+      "Wokwi: add second component & wire simple logic",
+      "Finance: Compound Interest & Emergency Funds",
+      "Networking: talk to someone new",
+      "Reflection: 2-min note"
+    ]},
+    { title: "Database mix", tasks: [
+      "Python: finish days 47–51 of 100 days of code",
+      "Weekend build: connect Express API to MongoDB CRUD",
+      "Wokwi: export circuit, note hardware requirements",
+      "Finance: Supply, Demand & Market Price",
+      "Networking: follow up message",
+      "Reflection: 2-min note"
+    ], milestone: "Milestone: ~51 days Python, Express+Mongo skeleton ready." }
+  ]},
+  { month: "Month 2 — Build real thing", tag: "W 5–8", weeks: [
+    { title: "Real backend", tasks: [
+      "Python: finish days 52–56 of 100 days of code",
+      "Weekend build: turn old project data into real Express+Mongo API",
+      "Wokwi: simulate ESP32 live serial readings",
+      "Finance: Opportunity Cost & Elasticity",
+      "Networking: club meeting",
+      "Reflection: 2-min note"
+    ]},
+    { title: "Auth system", tasks: [
+      "Python: finish days 57–61 of 100 days of code",
+      "Weekend build: add JWT auth to API",
+      "Wokwi: connect simulated ESP32 to Wi-Fi",
+      "Finance: Macro vs Micro & Inflation",
+      "Networking: follow-up message",
+      "Reflection: 2-min note"
+    ]},
+    { title: "Connect stack", tasks: [
+      "Python: finish days 62–66 of 100 days of code",
+      "Weekend build: swap React local storage for API calls",
+      "Wokwi: send HTTP request from simulated ESP32",
+      "Finance: Startup Basics — PMF & MVP",
+      "Networking: campus event",
+      "Reflection: 2-min note"
+    ]},
+    { title: "Ship live", tasks: [
+      "Python: finish days 67–71 of 100 days of code",
+      "Weekend build: deploy API + database to Render/Railway",
+      "Wokwi: point ESP32 HTTP request at live API",
+      "Finance: Revenue vs Profit & Margins",
+      "Networking: follow-up message",
+      "Reflection: 2-min note"
+    ], milestone: "Milestone: Full-stack app live, ~70 days Python complete." }
+  ]},
+  { month: "Month 3 — Bridge project", tag: "W 9–12", weeks: [
+    { title: "Add AI feature", tasks: [
+      "Python: finish days 72–76 of 100 days of code",
+      "Weekend build: wire AI API call into app",
+      "Wokwi: plan sensor feeding dashboard",
+      "Finance: Unit Economics — CAC & LTV",
+      "Networking: club meeting",
+      "Reflection: 2-min note"
+    ]},
+    { title: "Polish AI", tasks: [
+      "Python: finish days 77–81 of 100 days of code",
+      "Weekend build: handle errors & loading states",
+      "Wokwi: wire simulated sensor cleanly",
+      "Finance: Runway, Equity & Fundraising",
+      "Networking: follow-up message",
+      "Reflection: 2-min note"
+    ]},
+    { title: "Hardware web talk", tasks: [
+      "Python: finish days 82–86 of 100 days of code",
+      "Weekend build: display sensor data live on web",
+      "Wokwi: continue hardware bridge logic",
+      "Finance: Positioning & Target Market",
+      "Networking: campus event",
+      "Reflection: 2-min note"
+    ]},
+    { title: "Bridge project complete", tasks: [
+      "Python: finish days 87–91 of 100 days of code",
+      "Weekend build: polish bridge README",
+      "Wokwi: screen-recording of simulation",
+      "Finance: Brand & Funnel Marketing",
+      "Networking: follow-up message",
+      "Reflection: 2-min note"
+    ], milestone: "Milestone: Hardware + Web Bridge project working end-to-end." }
+  ]},
+  { month: "Month 4 — Finish & package", tag: "W 13–16", weeks: [
+    { title: "Fintech feature", tasks: [
+      "Python: finish days 92–96 of 100 days of code",
+      "Weekend build: payment/wallet sandbox feature",
+      "Wokwi: maintain stable simulation",
+      "Finance: Retention vs Acquisition",
+      "Networking: club meeting",
+      "Reflection: 2-min note"
+    ]},
+    { title: "Finish Python", tasks: [
+      "Python: finish days 97–100 of 100 days of code",
+      "Weekend build: package top project with video demo",
+      "Wokwi: final simulation polish",
+      "Finance: Organic Growth & Word of Mouth",
+      "Networking: follow-up message",
+      "Reflection: 2-min note"
+    ]},
+    { title: "Portfolio pass", tasks: [
+      "General: tidy GitHub profile & pin repos",
+      "Weekend build: write case study for top 2 repos",
+      "Wokwi: simulation maintenance",
+      "Finance: Risk Management & Diversification",
+      "Networking: campus event",
+      "Reflection: 2-min note"
+    ]},
+    { title: "Capstone ready", tasks: [
+      "Capstone: verify end-to-end system operations",
+      "Share: present at hackathon/Telegram channel",
+      "Finance: Startup Pitch deck creation",
+      "Networking: thank supporters",
+      "Reflection: write 3 goals for next semester"
+    ], milestone: "Semester complete: 100 days of Python, full-stack app & hardware bridge!" }
+  ]}
+];
+
+// Split task text into main content + sub-label
+function parseTask(taskStr) {
+  const colonIdx = taskStr.indexOf(":");
+  if (colonIdx !== -1) {
+    const tag = taskStr.substring(0, colonIdx).trim();
+    const mainText = taskStr.substring(colonIdx + 1).trim();
+    return { mainText, tag };
+  }
+  return { mainText: taskStr, tag: null };
+}
+
+const ALL_WEEKS = [];
+DATA.forEach((m, mi) => {
+  m.weeks.forEach((w, wi) => ALL_WEEKS.push(`m${mi}-w${wi}`));
+});
+
+const STORAGE_KEY = "build-log-state-v7";
+let state = {
+  tasks: {},
+  activeWeek: "m0-w0"
+};
+
+function taskId(mi, wi, ti){ return `m${mi}-w${wi}-t${ti}`; }
+function weekId(mi, wi){ return `m${mi}-w${wi}`; }
+
+function render(){
+  const root = document.getElementById("months");
+  root.innerHTML = "";
+  let total = 0, done = 0;
+
+  if (state.activeWeek) {
+    document.body.classList.add("focus-mode");
+  } else {
+    document.body.classList.remove("focus-mode");
+  }
+
+  DATA.forEach((month, mi) => {
+    let monthHasActive = false;
+    const monthEl = document.createElement("div");
+    monthEl.className = "month";
+
+    const head = document.createElement("div");
+    head.className = "month-head";
+    head.innerHTML = `<span class="chev">▾</span><span class="month-title">${month.month}</span><span class="month-tag">${month.tag}</span>`;
+
+    const body = document.createElement("div");
+    body.className = "month-body";
+
+    head.addEventListener("click", () => {
+      head.classList.toggle("collapsed");
+      body.classList.toggle("collapsed");
+    });
+
+    month.weeks.forEach((week, wi) => {
+      const weekNum = mi * 4 + wi + 1;
+      const wId = weekId(mi, wi);
+      const isActive = state.activeWeek === wId;
+      if (isActive) monthHasActive = true;
+
+      const weekEl = document.createElement("div");
+      weekEl.className = "week" + (week.milestone ? " milestone" : "") + (isActive ? " active" : "");
+
+      let weekDone = 0;
+      const taskRows = week.tasks.map((rawTask, ti) => {
+        const id = taskId(mi, wi, ti);
+        total++;
+        const checked = !!state.tasks[id];
+        if (checked){ done++; weekDone++; }
+        
+        const { mainText, tag } = parseTask(rawTask);
+
+        return `
+          <div class="task${checked ? " checked" : ""}" data-id="${id}">
+            <input type="checkbox" id="${id}" ${checked ? "checked" : ""}>
+            <div class="task-body">
+              <label for="${id}" class="task-text">${mainText}</label>
+              ${tag ? `<span class="task-tag">${tag}</span>` : ''}
+            </div>
+          </div>`;
+      }).join("");
+
+      weekEl.innerHTML = `
+        ${isActive ? `<span class="key-hint">[B] Overview · [← / →] Nav · [F] Full</span>` : ''}
+        <div class="week-head" data-weekid="${wId}">
+          <span class="week-num">WK ${weekNum}</span>
+          <span class="week-title">${week.title}</span>
+          <span class="week-done-tag">${weekDone}/${week.tasks.length}</span>
+        </div>
+        <div class="week-content">
+          ${taskRows}
+          ${week.milestone ? `<div class="milestone-note"><b>Milestone:</b> ${week.milestone}</div>` : ""}
+        </div>
+      `;
+      body.appendChild(weekEl);
+    });
+
+    if (monthHasActive) monthEl.classList.add("has-active");
+    monthEl.appendChild(head);
+    monthEl.appendChild(body);
+    root.appendChild(monthEl);
+  });
+
+  document.getElementById("progressNum").textContent = total ? Math.round((done/total)*100) + "%" : "0%";
+  document.getElementById("progressLabel").textContent = `${done} of ${total} tasks`;
+  document.getElementById("barFill").style.width = (total ? (done/total)*100 : 0) + "%";
+
+  root.querySelectorAll('.week-head').forEach(wHead => {
+    wHead.addEventListener('click', async (e) => {
+      const selectedWId = e.currentTarget.dataset.weekid;
+      state.activeWeek = selectedWId;
+      render();
+      saveState();
+    });
+  });
+
+  root.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener("change", async (e) => {
+      const id = e.target.closest(".task").dataset.id;
+      state.tasks[id] = e.target.checked;
+      render();
+      saveState();
+    });
+  });
+}
+
+// Key handling for navigation
+window.addEventListener("keydown", async (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.isContentEditable) return;
+  const key = e.key.toLowerCase();
+
+  if (key === 'b') {
+    state.activeWeek = state.activeWeek ? null : ALL_WEEKS[0];
+    render();
+    saveState();
+  } else if (key === 'f') {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => console.error(err));
+    } else {
+      document.exitFullscreen().catch(err => console.error(err));
+    }
+  } else if (e.key === 'ArrowRight' || key === 'n') {
+    if (!state.activeWeek) {
+      state.activeWeek = ALL_WEEKS[0];
+    } else {
+      let idx = ALL_WEEKS.indexOf(state.activeWeek);
+      if (idx < ALL_WEEKS.length - 1) state.activeWeek = ALL_WEEKS[idx + 1];
+    }
+    render();
+    saveState();
+  } else if (e.key === 'ArrowLeft' || key === 'p') {
+    if (!state.activeWeek) {
+      state.activeWeek = ALL_WEEKS[ALL_WEEKS.length - 1];
+    } else {
+      let idx = ALL_WEEKS.indexOf(state.activeWeek);
+      if (idx > 0) state.activeWeek = ALL_WEEKS[idx - 1];
+    }
+    render();
+    saveState();
+  }
+});
+
+async function saveState(){
+  try { await window.storage.set(STORAGE_KEY, JSON.stringify(state), false); }
+  catch(err){ console.error("save failed", err); }
+}
+
+async function init(){
+  const loadingEl = document.getElementById("loading");
+  try {
+    const result = await window.storage.get(STORAGE_KEY, false);
+    if (result && result.value) {
+      const loaded = JSON.parse(result.value);
+      state = {
+        tasks: loaded.tasks || loaded || {},
+        activeWeek: loaded.activeWeek !== undefined ? loaded.activeWeek : "m0-w0"
+      };
+    }
+  } catch(err) {
+    state = { tasks: {}, activeWeek: "m0-w0" };
+  }
+  loadingEl.style.display = "none";
+  render();
+}
+
+document.getElementById("resetBtn").addEventListener("click", async () => {
+  if (!confirm("Clear all checked progress?")) return;
+  state = { tasks: {}, activeWeek: "m0-w0" };
+  render();
+  saveState();
+});
+
+init();
+</script>
+
+<!-- ===== Quick Plans logic (Supabase-backed, shared with the phone app) ===== -->
+<script>
+(function(){
+  const statusEl = document.getElementById("qpStatus");
+  const listEl = document.getElementById("qpList");
+  const progNumEl = document.getElementById("qpProgressNum");
+  const progLabelEl = document.getElementById("qpProgressLabel");
+  const progBarEl = document.getElementById("qpBarFill");
+  const newTextEl = document.getElementById("qpNewText");
+  const newCatEl = document.getElementById("qpNewCategory");
+  const addBtnEl = document.getElementById("qpAddBtn");
+
+  if (!window.supabase || SUPABASE_URL.includes("YOUR-PROJECT")) {
+    statusEl.textContent = "not configured";
+    listEl.innerHTML = '<div class="qp-empty">Add your Supabase URL &amp; anon key at the top of this file, then run supabase-schema.sql in your project.</div>';
+    return;
+  }
+
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  let plans = [];
+
+  function renderPlans(){
+    let total = plans.length, done = plans.filter(p => p.done).length;
+    progNumEl.textContent = total ? Math.round((done/total)*100) + "%" : "0%";
+    progLabelEl.textContent = `${done} of ${total}`;
+    progBarEl.style.width = (total ? (done/total)*100 : 0) + "%";
+
+    if (!plans.length){
+      listEl.innerHTML = '<div class="qp-empty">No quick plans yet.</div>';
+      return;
+    }
+
+    // newest first
+    const sorted = [...plans].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+
+    listEl.innerHTML = sorted.map(p => `
+      <div class="qp-item${p.done ? " done" : ""}" data-id="${p.id}">
+        <input type="checkbox" class="qp-check" ${p.done ? "checked" : ""}>
+        <div class="qp-item-body">
+          <div class="qp-item-text" contenteditable="true" spellcheck="false">${escapeHtml(p.text)}</div>
+          <div class="qp-item-meta">
+            ${p.category ? `<span class="qp-item-cat">${escapeHtml(p.category)}</span>` : ""}
+            <span class="qp-item-src">${p.source === "mobile" ? "📱" : "💻"}</span>
+          </div>
+        </div>
+        <button class="qp-del" title="Delete">✕</button>
+      </div>
+    `).join("");
+
+    listEl.querySelectorAll(".qp-item").forEach(item => {
+      const id = item.dataset.id;
+
+      item.querySelector(".qp-check").addEventListener("change", async (e) => {
+        await updatePlan(id, { done: e.target.checked });
+      });
+
+      const textEl = item.querySelector(".qp-item-text");
+      textEl.addEventListener("keydown", (e) => {
+        if (e.key === "Enter"){ e.preventDefault(); textEl.blur(); }
+      });
+      textEl.addEventListener("blur", async () => {
+        const newText = textEl.textContent.trim();
+        const original = plans.find(p => p.id === id);
+        if (newText && original && newText !== original.text){
+          await updatePlan(id, { text: newText });
+        } else {
+          textEl.textContent = original ? original.text : "";
         }
-    </script>
+      });
+
+      item.querySelector(".qp-del").addEventListener("click", async () => {
+        await deletePlan(id);
+      });
+    });
+  }
+
+  function escapeHtml(str){
+    const d = document.createElement("div");
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  async function fetchPlans(){
+    const { data, error } = await sb.from("plans").select("*");
+    if (error){ console.error(error); statusEl.textContent = "error"; return; }
+    plans = data || [];
+    renderPlans();
+  }
+
+  async function addPlan(){
+    const text = newTextEl.value.trim();
+    if (!text) return;
+    const category = newCatEl.value || null;
+    newTextEl.value = "";
+    const { error } = await sb.from("plans").insert({ text, category, done: false, source: "web" });
+    if (error) console.error(error);
+  }
+
+  async function updatePlan(id, patch){
+    const { error } = await sb.from("plans").update(patch).eq("id", id);
+    if (error) console.error(error);
+  }
+
+  async function deletePlan(id){
+    const { error } = await sb.from("plans").delete().eq("id", id);
+    if (error) console.error(error);
+  }
+
+  addBtnEl.addEventListener("click", addPlan);
+  newTextEl.addEventListener("keydown", (e) => { if (e.key === "Enter") addPlan(); });
+
+  sb.channel("plans-changes")
+    .on("postgres_changes", { event: "*", schema: "public", table: "plans" }, () => {
+      fetchPlans();
+    })
+    .subscribe((status) => {
+      if (status === "SUBSCRIBED"){
+        statusEl.textContent = "live";
+        statusEl.classList.add("live");
+      }
+    });
+
+  fetchPlans();
+})();
+</script>
+
 </body>
 </html>
