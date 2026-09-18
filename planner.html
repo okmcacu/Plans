@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Planner</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body {
+            background-color: transparent;
+            color: #f5f8fa;
+            display: flex;
+            gap: 20px;
+            padding: 40px;
+            height: 100vh;
+        }
+        .panel {
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 24px;
+            width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        h2 { font-size: 1.2rem; font-weight: 600; letter-spacing: 1px; color: #fff; }
+        hr { border: none; height: 1px; background: rgba(255, 255, 255, 0.2); }
+        .label { font-size: 0.85rem; color: #88a; font-weight: 600; }
+        .list { display: flex; flex-direction: column; gap: 8px; flex-grow: 1; overflow-y: auto; }
+        .item { display: flex; align-items: center; gap: 10px; background: rgba(255, 255, 255, 0.05); padding: 8px 12px; border-radius: 6px; }
+        .item input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+        .item input[type="text"] {
+            background: transparent; border: none; color: #fff; width: 100%; outline: none; font-size: 0.95rem;
+        }
+        .item input[type="text"]:focus { border-bottom: 1px solid #88a; }
+        .btn {
+            background: transparent; border: none; color: #88a; cursor: pointer; text-align: left; font-size: 0.9rem; font-weight: 600;
+        }
+        .btn:hover { color: #fff; }
+    </style>
+</head>
+<body>
+
+    <!-- PLANS & GOALS PANEL -->
+    <div class="panel">
+        <h2>PLANS</h2>
+        <hr>
+        <div class="label">TODAY</div>
+        <div class="list" id="plans-list">
+            <div class="item"><input type="checkbox"><input type="text" placeholder="New plan..."></div>
+        </div>
+        <button class="btn" onclick="addItem('plans-list')">+ ADD PLAN</button>
+
+        <div class="label" style="margin-top: 10px;">GOALS</div>
+        <div class="list" id="goals-list">
+            <div class="item"><input type="checkbox"><input type="text" placeholder="New goal..."></div>
+        </div>
+        <button class="btn" onclick="addItem('goals-list')">+ ADD GOAL</button>
+    </div>
+
+    <!-- SCHEDULE PANEL -->
+    <div class="panel">
+        <h2>SCHEDULE</h2>
+        <hr>
+        <div class="label">TODAY</div>
+        <div class="list" id="schedule-list">
+            <div class="item"><input type="text" placeholder="Event / Time..."></div>
+        </div>
+        <button class="btn" onclick="addItem('schedule-list')">+ ADD EVENT</button>
+    </div>
+
+    <script>
+        function addItem(listId) {
+            const list = document.getElementById(listId);
+            const div = document.createElement('div');
+            div.className = 'item';
+            if (listId !== 'schedule-list') {
+                div.innerHTML = '<input type="checkbox"><input type="text" placeholder="New item...">';
+            } else {
+                div.innerHTML = '<input type="text" placeholder="Event / Time...">';
+            }
+            list.appendChild(div);
+        }
+    </script>
+</body>
+</html>
